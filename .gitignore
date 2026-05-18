@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+pip-log.txt
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+
+# Environment & secrets
+.env
+firebase-service-account.json
+*.key
+*.pem
+
+# Dart / Flutter
+.dart_tool/
+build/
+*.g.dart
+*.freezed.dart
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

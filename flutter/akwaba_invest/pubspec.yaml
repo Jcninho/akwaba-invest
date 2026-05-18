@@ -1,0 +1,40 @@
+name: akwaba_invest
+description: "Akwaba Invest — BRVM market data aggregator for UEMOA investors."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.3.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  go_router: ^13.2.0
+  drift: ^2.14.1
+  sqlite3_flutter_libs: ^0.5.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
+  dio: ^5.4.0
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+  flutter_secure_storage: ^9.0.0
+  firebase_core: ^2.27.0
+  firebase_messaging: ^14.7.0
+  connectivity_plus: ^6.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.0
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.0
+  drift_dev: ^2.14.1
+
+flutter:
+  uses-material-design: true
