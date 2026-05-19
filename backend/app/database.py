@@ -1,12 +1,16 @@
-from sqlmodel import SQLModel, Session, create_engine
+import logging
+
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+logger = logging.getLogger(__name__)
 
-
-def create_db_and_tables() -> None:
-    SQLModel.metadata.create_all(engine)
+engine = create_engine(
+    settings.DATABASE_URL,
+    echo=settings.APP_ENV == "development",
+    pool_pre_ping=True,
+)
 
 
 def get_session():

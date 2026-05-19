@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.firebase import init_firebase
 from app.api.routes import auth, stocks, portfolio, alerts, payments
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ app.include_router(payments.router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def on_startup() -> None:
+    init_firebase()
     logger.info("Akwaba Invest API started")
 
 
