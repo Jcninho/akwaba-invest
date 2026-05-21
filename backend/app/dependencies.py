@@ -1,9 +1,11 @@
 import logging
+import secrets
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 
+from app.config import settings
 from app.database import get_session
 from app.firebase import verify_id_token
 from app.models import User
@@ -59,3 +61,20 @@ def require_premium(user: User = Depends(get_current_user)) -> User:
     # TODO: check user.plan == 'premium', subscription.status == 'active',
     # subscription.end_date > now(). Raise 403 if not premium. (next task)
     raise NotImplementedError
+
+
+def verify_admin_key(x_admin_key: str = Header(...)) -> str:
+    """Verify admin API key using constant-time comparison.
+
+    The key must be passed as the ``X-Admin-Key`` request header.
+    Uses ``secrets.compare_digest`` to prevent timing attacks.
+
+    Raises:
+        HTTPException 403 — if the key is missing or does not match.
+    """
+    if not secrets.compare_digest(x_admin_key, settings.ADMIN_API_KEY):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid admin key",
+        )
+    return x_admin_key

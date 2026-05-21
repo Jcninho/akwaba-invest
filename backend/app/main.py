@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.firebase import init_firebase
-from app.api.routes import auth, stocks, portfolio, alerts, payments
+from app.api.routes import admin, auth, stocks, portfolio, alerts, payments
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(admin.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(stocks.router, prefix="/api/v1")
 app.include_router(portfolio.router, prefix="/api/v1")

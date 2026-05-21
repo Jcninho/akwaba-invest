@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(ls venv/)",
-      "Bash(ls .venv/)"
+      "Bash(ls .venv/)",
+      "Bash(.venv/Scripts/python -m pytest tests/test_import_daily.py -v)",
+      "Bash(.venv/Scripts/python -m pytest tests/ -v)",
+      "Bash(.venv/Scripts/python scripts/import_daily.py --help)",
+      "Bash(.venv/Scripts/python -m pytest tests/test_import_daily.py -v --tb=short)"
     ]
   }
 }
