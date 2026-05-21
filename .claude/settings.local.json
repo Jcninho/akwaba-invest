@@ -6,7 +6,13 @@
       "Bash(.venv/Scripts/python -m pytest tests/test_import_daily.py -v)",
       "Bash(.venv/Scripts/python -m pytest tests/ -v)",
       "Bash(.venv/Scripts/python scripts/import_daily.py --help)",
-      "Bash(.venv/Scripts/python -m pytest tests/test_import_daily.py -v --tb=short)"
+      "Bash(.venv/Scripts/python -m pytest tests/test_import_daily.py -v --tb=short)",
+      "Bash(.venv/Scripts/python -c \"import aiofiles; print\\('aiofiles OK', aiofiles.__version__\\)\")",
+      "Bash(.venv/Scripts/pip install *)",
+      "Bash(.venv/Scripts/python -c \"import aiofiles; print\\('OK', aiofiles.__version__\\)\")",
+      "Bash(.venv/Scripts/python -c \"import aiofiles; print\\('aiofiles installed'\\)\")",
+      "Bash(.venv/Scripts/python -c \"from fastapi.staticfiles import StaticFiles; print\\('StaticFiles OK'\\)\")",
+      "Bash(.venv/Scripts/python -m pytest tests/ -v --tb=short)"
     ]
   }
 }

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1A2E40">
+  <title>Akwaba Invest — Import</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      background: #F0F4F8;
+      color: #1A2E40;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1A2E40;
+      color: #fff;
+      padding: 20px 16px 16px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: .5px; }
+    header p  { font-size: .85rem; opacity: .75; margin-top: 4px; }
+
+    /* ── Card ── */
+    main {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      margin-bottom: 16px;
+    }
+
+    /* ── Form elements ── */
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: #4A5568;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 6px;
+    }
+    label .optional {
+      font-weight: 400;
+      text-transform: none;
+      color: #9AA5B4;
+      letter-spacing: 0;
+    }
+
+    input[type="password"],
+    input[type="date"] {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #1A2E40;
+      background: #fff;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input[type="password"]:focus,
+    input[type="date"]:focus {
+      border-color: #1A2E40;
+    }
+
+    .field { margin-bottom: 18px; }
+
+    /* ── Textarea block ── */
+    .textarea-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .char-count {
+      font-size: .75rem;
+      color: #9AA5B4;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: .82rem;
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+      color: #1A2E40;
+      resize: vertical;
+      outline: none;
+      transition: border-color .15s;
+      line-height: 1.5;
+    }
+    textarea:focus { border-color: #1A2E40; }
+
+    .textarea-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 5px;
+    }
+    .btn-clear {
+      background: none;
+      border: none;
+      font-size: .78rem;
+      color: #9AA5B4;
+      cursor: pointer;
+      padding: 2px 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .btn-clear:hover { color: #DC2626; }
+
+    /* ── Submit button ── */
+    .btn-submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      background: #00875A;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+      margin-top: 4px;
+    }
+    .btn-submit:hover:not(:disabled) { background: #006B48; }
+    .btn-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,.35);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result box ── */
+    #result {
+      display: none;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: .9rem;
+      font-weight: 500;
+      line-height: 1.5;
+      margin-top: 16px;
+    }
+    #result.success {
+      background: #D1FAE5;
+      color: #065F46;
+      border: 1.5px solid #6EE7B7;
+    }
+    #result.error {
+      background: #FEE2E2;
+      color: #991B1B;
+      border: 1.5px solid #FCA5A5;
+    }
+
+    /* ── Footer hint ── */
+    .hint {
+      font-size: .75rem;
+      color: #9AA5B4;
+      text-align: center;
+      padding: 8px 0 24px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Akwaba Invest</h1>
+  <p>Import données quotidiennes</p>
+</header>
+
+<main>
+  <form id="importForm" novalidate>
+    <div class="card">
+
+      <!-- Password -->
+      <div class="field">
+        <label for="adminKey">Mot de passe admin</label>
+        <input type="password" id="adminKey" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+
+      <!-- Date -->
+      <div class="field">
+        <label for="tradingDate">Date de trading</label>
+        <input type="date" id="tradingDate" required>
+      </div>
+
+    </div><!-- /card -->
+
+    <div class="card">
+
+      <!-- Stocks (required) -->
+      <div class="field">
+        <div class="textarea-header">
+          <label for="stocksData">Données cours</label>
+          <span class="char-count" id="stocksCount">0 car.</span>
+        </div>
+        <textarea id="stocksData" rows="8"
+          placeholder="Coller les cours ici..."
+          spellcheck="false" autocorrect="off" autocapitalize="off"
+          required></textarea>
+        <div class="textarea-footer">
+          <button type="button" class="btn-clear" data-target="stocksData" data-count="stocksCount">
+            Effacer
+          </button>
+        </div>
+      </div>
+
+      <!-- Indices (optional) -->
+      <div class="field">
+        <div class="textarea-header">
+          <label for="indicesData">Données indices <span class="optional">(optionnel)</span></label>
+          <span class="char-count" id="indicesCount">0 car.</span>
+        </div>
+        <textarea id="indicesData" rows="5"
+          placeholder="Coller les indices ici..."
+          spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="textarea-footer">
+          <button type="button" class="btn-clear" data-target="indicesData" data-count="indicesCount">
+            Effacer
+          </button>
+        </div>
+      </div>
+
+      <!-- Dividends (optional) -->
+      <div class="field" style="margin-bottom:0">
+        <div class="textarea-header">
+          <label for="dividendsData">Données dividendes <span class="optional">(optionnel)</span></label>
+          <span class="char-count" id="dividendsCount">0 car.</span>
+        </div>
+        <textarea id="dividendsData" rows="5"
+          placeholder="Coller les dividendes ici..."
+          spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        <div class="textarea-footer">
+          <button type="button" class="btn-clear" data-target="dividendsData" data-count="dividendsCount">
+            Effacer
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /card -->
+
+    <button type="submit" class="btn-submit" id="submitBtn">
+      <span class="spinner" id="spinner"></span>
+      <span id="btnLabel">Importer les données</span>
+    </button>
+
+    <div id="result"></div>
+
+  </form>
+
+  <p class="hint">Clé transmise via en-tête HTTP — non stockée localement</p>
+</main>
+
+<script>
+  // ── Set today's date as default ───────────────────────────────────────────
+  (function () {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    document.getElementById('tradingDate').value = today;
+  })();
+
+  // ── Character counters ────────────────────────────────────────────────────
+  ['stocksData', 'indicesData', 'dividendsData'].forEach(id => {
+    const ta = document.getElementById(id);
+    const countId = id.replace('Data', 'Count');
+    const counter = document.getElementById(countId);
+    ta.addEventListener('input', () => {
+      counter.textContent = ta.value.length.toLocaleString('fr') + ' car.';
+    });
+  });
+
+  // ── Effacer buttons ───────────────────────────────────────────────────────
+  document.querySelectorAll('.btn-clear').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ta    = document.getElementById(btn.dataset.target);
+      const count = document.getElementById(btn.dataset.count);
+      ta.value = '';
+      count.textContent = '0 car.';
+      ta.focus();
+    });
+  });
+
+  // ── Result helper ─────────────────────────────────────────────────────────
+  function showResult(type, message) {
+    const el = document.getElementById('result');
+    el.className = type;         // 'success' | 'error'
+    el.textContent = message;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideResult() {
+    const el = document.getElementById('result');
+    el.style.display = 'none';
+    el.className = '';
+  }
+
+  // ── Form submit ───────────────────────────────────────────────────────────
+  document.getElementById('importForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    hideResult();
+
+    const adminKey      = document.getElementById('adminKey').value.trim();
+    const tradingDate   = document.getElementById('tradingDate').value;
+    const stocksText    = document.getElementById('stocksData').value;
+    const indicesText   = document.getElementById('indicesData').value;
+    const dividendsText = document.getElementById('dividendsData').value;
+
+    // ── Client-side validation ──────────────────────────────────────────────
+    if (!adminKey) {
+      showResult('error', '❌ Mot de passe admin requis.');
+      document.getElementById('adminKey').focus();
+      return;
+    }
+    if (!tradingDate) {
+      showResult('error', '❌ Date de trading requise.');
+      return;
+    }
+    if (!stocksText.trim()) {
+      showResult('error', '❌ Les données cours sont obligatoires.');
+      document.getElementById('stocksData').focus();
+      return;
+    }
+
+    // ── Loading state ───────────────────────────────────────────────────────
+    const btn     = document.getElementById('submitBtn');
+    const spinner = document.getElementById('spinner');
+    const label   = document.getElementById('btnLabel');
+    btn.disabled          = true;
+    spinner.style.display = 'inline-block';
+    label.textContent     = 'Importation en cours…';
+
+    // ── Build FormData ──────────────────────────────────────────────────────
+    const fd = new FormData();
+    fd.append('trading_date', tradingDate);
+
+    // Textarea content → Blob → File (required by multipart endpoint)
+    fd.append('stocks_file',
+      new Blob([stocksText], { type: 'text/plain' }), 'stocks.txt');
+
+    if (indicesText.trim()) {
+      fd.append('indices_file',
+        new Blob([indicesText], { type: 'text/plain' }), 'indices.txt');
+    }
+    if (dividendsText.trim()) {
+      fd.append('dividends_file',
+        new Blob([dividendsText], { type: 'text/plain' }), 'dividends.txt');
+    }
+
+    // ── API call ─────────────────────────────────────────────────────────────
+    try {
+      const response = await fetch('/api/v1/admin/upload-daily', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': adminKey },
+        body: fd,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showResult(
+          'success',
+          `✅ Succes — ${data.stocks_parsed} actions importées (${data.trading_date})`
+        );
+      } else {
+        let detail = 'Erreur inconnue';
+        try {
+          const err = await response.json();
+          detail = err.detail || detail;
+        } catch (_) { /* response body not JSON */ }
+
+        if (response.status === 403) {
+          detail = 'Mot de passe admin incorrect.';
+        }
+        showResult('error', `❌ Erreur — ${detail}`);
+      }
+    } catch (networkErr) {
+      showResult('error', `❌ Erreur réseau — Vérifiez votre connexion.`);
+    } finally {
+      btn.disabled          = false;
+      spinner.style.display = 'none';
+      label.textContent     = 'Importer les données';
+    }
+  });
+</script>
+
+</body>
+</html>
