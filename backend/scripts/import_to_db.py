@@ -74,9 +74,11 @@ def _upsert_daily_price(
     Maps JSON fields → DailyPrice columns:
       close        → close_price
       open         → open_price
+      high         → high_price
+      low          → low_price
       volume_units → volume
       variation_pct→ variation_pct
-    (high, low, volume_xof are stored in JSON only — no DB columns yet)
+    (volume_xof is stored in JSON only — no DB column)
     """
     existing = session.exec(
         select(DailyPrice)
@@ -86,17 +88,23 @@ def _upsert_daily_price(
 
     close_raw = stock_data.get("close")
     open_raw = stock_data.get("open")
+    high_raw = stock_data.get("high")
+    low_raw = stock_data.get("low")
     vol_units = stock_data.get("volume_units")
     var_pct = stock_data.get("variation_pct")
 
     close_price = Decimal(str(close_raw)) if close_raw is not None else Decimal("0")
     open_price = Decimal(str(open_raw)) if open_raw is not None else None
+    high_price = Decimal(str(high_raw)) if high_raw is not None else None
+    low_price = Decimal(str(low_raw)) if low_raw is not None else None
     volume = int(vol_units) if vol_units is not None else 0
     variation_pct = Decimal(str(var_pct)) if var_pct is not None else None
 
     if existing:
         existing.close_price = close_price
         existing.open_price = open_price
+        existing.high_price = high_price
+        existing.low_price = low_price
         existing.volume = volume
         existing.variation_pct = variation_pct
         session.add(existing)
@@ -106,6 +114,8 @@ def _upsert_daily_price(
         stock_id=stock_id,
         trading_date=trading_date,
         open_price=open_price,
+        high_price=high_price,
+        low_price=low_price,
         close_price=close_price,
         volume=volume,
         variation_pct=variation_pct,
