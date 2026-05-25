@@ -75,6 +75,13 @@ class InsufficientSharesError(AkwabaException):
         )
 
 
+class AlertNotFoundError(AkwabaException):
+    """Raised when an alert is not found or doesn't belong to the user."""
+
+    def __init__(self, alert_id: int) -> None:
+        super().__init__(f"Alert {alert_id} not found", status_code=404)
+
+
 class PortfolioNotFoundError(AkwabaException):
     """Raised when a portfolio is not found or doesn't belong to the user."""
 
