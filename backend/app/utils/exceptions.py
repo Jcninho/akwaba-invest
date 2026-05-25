@@ -75,6 +75,16 @@ class InsufficientSharesError(AkwabaException):
         )
 
 
+class PortfolioNotFoundError(AkwabaException):
+    """Raised when a portfolio is not found or doesn't belong to the user."""
+
+    def __init__(self, portfolio_id: int) -> None:
+        super().__init__(
+            f"Portfolio {portfolio_id} not found",
+            status_code=404,
+        )
+
+
 class PositionNotFoundError(AkwabaException):
     """Raised when a portfolio position does not exist."""
 
