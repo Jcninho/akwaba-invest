@@ -1,4 +1,4 @@
-package com.example.akwaba_invest
+package com.akwaba.invest
 
 import io.flutter.embedding.android.FlutterActivity
 

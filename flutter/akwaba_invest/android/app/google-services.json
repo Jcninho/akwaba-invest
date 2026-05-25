@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1094534177890",
+    "project_id": "akwaba-invest",
+    "storage_bucket": "akwaba-invest.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1094534177890:android:f9a2463c26f5c779411d3b",
+        "android_client_info": {
+          "package_name": "com.akwaba.invest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1094534177890-imira3sirkbf2r4v688mm8kspdfm1imr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAxVnPSYqUes7WP-O0qq4uY8rroHAFz7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1094534177890-imira3sirkbf2r4v688mm8kspdfm1imr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
