@@ -6,61 +6,50 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/providers/auth_provider.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
-  /// True while a sign-in action is in flight (local UI state only).
-  bool _signingIn = false;
+  /// True while the registration request is in flight (local UI state only).
+  bool _registering = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   // ---------------------------------------------------------------------------
-  // Actions
+  // Action
   // ---------------------------------------------------------------------------
 
-  Future<void> _signInWithEmail() async {
+  Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _signingIn = true);
+    setState(() => _registering = true);
 
-    await ref.read(authProvider.notifier).signInWithEmail(
+    await ref.read(authProvider.notifier).register(
           _emailController.text.trim(),
           _passwordController.text,
         );
 
     if (!mounted) return;
-    setState(() => _signingIn = false);
+    setState(() => _registering = false);
 
-    // Show error if sign-in failed; on success the router redirect handles
-    // the navigation to /market automatically.
-    _handleAuthError();
-  }
-
-  Future<void> _signInWithGoogle() async {
-    setState(() => _signingIn = true);
-
-    await ref.read(authProvider.notifier).signInWithGoogle();
-
-    if (!mounted) return;
-    setState(() => _signingIn = false);
-    _handleAuthError();
-  }
-
-  void _handleAuthError() {
+    // On success the router redirect handles navigation to /market.
+    // On failure show a snackbar.
     final authState = ref.read(authProvider);
     authState.whenOrNull(
       error: (error, _) {
@@ -78,17 +67,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _errorMessage(Object error) {
     if (error is FirebaseAuthException) {
       return switch (error.code) {
-        'user-not-found' => 'Aucun compte trouvé pour cet email.',
-        'wrong-password' ||
-        'invalid-credential' =>
-          'Email ou mot de passe incorrect.',
+        'email-already-in-use' => 'Un compte existe déjà pour cet email.',
         'invalid-email' => 'Adresse email invalide.',
-        'user-disabled' => 'Ce compte a été désactivé.',
-        'too-many-requests' => 'Trop de tentatives. Réessayez plus tard.',
-        _ => 'Erreur de connexion. Réessayez.',
+        'weak-password' => 'Mot de passe trop faible (minimum 6 caractères).',
+        'operation-not-allowed' => 'Création de compte désactivée.',
+        _ => 'Erreur lors de la création du compte. Réessayez.',
       };
     }
-    return 'Erreur de connexion. Réessayez.';
+    return 'Erreur lors de la création du compte. Réessayez.';
   }
 
   // ---------------------------------------------------------------------------
@@ -106,6 +92,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Mot de passe requis';
     if (value.length < 6) return 'Minimum 6 caractères';
+    return null;
+  }
+
+  String? _validateConfirm(String? value) {
+    if (value == null || value.isEmpty) return 'Confirmation requise';
+    if (value != _passwordController.text) {
+      return 'Les mots de passe ne correspondent pas';
+    }
     return null;
   }
 
@@ -135,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Votre bourse UEMOA',
+                'Créer un compte',
                 style: TextStyle(
                   color: AppColors.grey,
                   fontSize: 14,
@@ -179,8 +173,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _signInWithEmail(),
+                        textInputAction: TextInputAction.next,
                         decoration: InputDecoration(
                           labelText: 'Mot de passe',
                           prefixIcon: const Icon(Icons.lock_outline),
@@ -197,35 +190,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         validator: _validatePassword,
                       ),
+                      const SizedBox(height: 16),
 
-                      // Forgot password
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            // TODO(P3-05): navigate to forgot-password screen
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'Mot de passe oublié ?',
-                            style: TextStyle(
-                              color: AppColors.grey,
-                              fontSize: 12,
+                      // Confirm password
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirm,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _register(),
+                        decoration: InputDecoration(
+                          labelText: 'Confirmer le mot de passe',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirm
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm,
                             ),
                           ),
                         ),
+                        validator: _validateConfirm,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 24),
 
-                      // Sign-in button
+                      // Register button
                       SizedBox(
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: _signingIn ? null : _signInWithEmail,
-                          child: _signingIn
+                          onPressed: _registering ? null : _register,
+                          child: _registering
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
@@ -234,50 +230,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     color: AppColors.white,
                                   ),
                                 )
-                              : const Text('Se connecter'),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Divider "ou"
-                      Row(
-                        children: [
-                          const Expanded(child: Divider()),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              'ou',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          const Expanded(child: Divider()),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Google button
-                      SizedBox(
-                        height: 48,
-                        child: OutlinedButton.icon(
-                          onPressed: _signingIn ? null : _signInWithGoogle,
-                          icon: Text(
-                            'G',
-                            style: TextStyle(
-                              color: Colors.red[600],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          label: const Text('Continuer avec Google'),
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
+                              : const Text('Créer mon compte'),
                         ),
                       ),
                     ],
@@ -286,18 +239,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 28),
 
-              // ── Register link ─────────────────────────────────────────────
+              // ── Login link ────────────────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Pas de compte ? ",
+                    'Déjà un compte ? ',
                     style: TextStyle(color: AppColors.grey),
                   ),
                   GestureDetector(
-                    onTap: () => context.go('/register'),
+                    onTap: () => context.go('/login'),
                     child: const Text(
-                      "S'inscrire",
+                      'Se connecter',
                       style: TextStyle(
                         color: AppColors.green,
                         fontWeight: FontWeight.w600,
