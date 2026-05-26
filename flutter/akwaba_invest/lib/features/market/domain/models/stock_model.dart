@@ -91,10 +91,11 @@ class MarketSummaryModel with _$MarketSummaryModel {
 @freezed
 class TopMoversModel with _$TopMoversModel {
   const factory TopMoversModel({
-    @JsonKey(name: 'top_gainers')
+    @JsonKey(name: 'gainers')  // ← était 'top_gainers'
     required List<StockWithPriceModel> topGainers,
-    @JsonKey(name: 'top_losers')
+    @JsonKey(name: 'losers')   // ← était 'top_losers'
     required List<StockWithPriceModel> topLosers,
+    @JsonKey(name: 'trading_date') String? tradingDate,
   }) = _TopMoversModel;
 
   factory TopMoversModel.fromJson(Map<String, dynamic> json) =>
