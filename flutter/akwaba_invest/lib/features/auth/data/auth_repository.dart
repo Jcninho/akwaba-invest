@@ -9,11 +9,12 @@ import '../domain/models/app_user.dart';
 
 /// Handles all Firebase Auth operations and backend user synchronisation.
 ///
-/// This repository:
-///  - delegates authentication to [FirebaseAuth] / [GoogleSignIn]
-///  - stores the Firebase ID token in [FlutterSecureStorage]
-///  - upserts the user in the backend via POST /auth/register
-///  - fetches the user plan via GET /auth/me
+/// Flow for every sign-in / register / session restore:
+///   1. Authenticate with Firebase (email/password, Google, or existing session)
+///   2. Persist the Firebase ID token in [FlutterSecureStorage]
+///   3. POST /auth/register   — idempotent upsert; creates the row if absent
+///   4. GET  /auth/me         — fetch the user plan from the backend DB
+///   5. Return [AppUser]; fallback to plan:'free' on any network failure
 class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -29,8 +30,6 @@ class AuthRepository {
   // ---------------------------------------------------------------------------
 
   /// Signs in with [email] and [password].
-  ///
-  /// Persists the ID token and upserts the user in the backend.
   Future<AppUser> signInWithEmail(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,
@@ -38,14 +37,10 @@ class AuthRepository {
     );
     final user = credential.user;
     if (user == null) throw Exception('Sign-in failed: no user returned.');
-    final token = await user.getIdToken();
-    await _persistToken(token);
-    return _upsertUser(user, token);
+    return _registerAndFetchUser(user);
   }
 
   /// Creates a new account with [email] and [password].
-  ///
-  /// Persists the ID token and upserts the user in the backend.
   Future<AppUser> registerWithEmail(String email, String password) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
@@ -53,9 +48,7 @@ class AuthRepository {
     );
     final user = credential.user;
     if (user == null) throw Exception('Registration failed: no user returned.');
-    final token = await user.getIdToken();
-    await _persistToken(token);
-    return _upsertUser(user, token);
+    return _registerAndFetchUser(user);
   }
 
   /// Initiates a Google Sign-In flow.
@@ -73,11 +66,10 @@ class AuthRepository {
 
     final userCredential = await _auth.signInWithCredential(credential);
     final user = userCredential.user;
-    if (user == null) throw Exception('Google sign-in failed: no user returned.');
-
-    final token = await user.getIdToken();
-    await _persistToken(token);
-    return _upsertUser(user, token);
+    if (user == null) {
+      throw Exception('Google sign-in failed: no user returned.');
+    }
+    return _registerAndFetchUser(user);
   }
 
   /// Signs out from Firebase and Google, then clears stored credentials.
@@ -110,43 +102,17 @@ class AuthRepository {
     return _storage.read(key: _tokenKey);
   }
 
-  /// Returns the currently authenticated [AppUser] with the plan from the API.
+  /// Returns the currently authenticated [AppUser].
+  ///
+  /// Calls POST /auth/register (idempotent) then GET /auth/me so that a user
+  /// who authenticated on a previous session is always registered in the DB
+  /// before the plan is fetched.
   ///
   /// Returns `null` when no Firebase user is logged in.
   Future<AppUser?> getCurrentUser() async {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) return null;
-
-    final token = await getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await _dio.get(
-        '/auth/me',
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
-      final data = response.data as Map<String, dynamic>;
-      final plan = data['plan'] as String? ?? 'free';
-      return AppUser(
-        uid: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName,
-        plan: plan,
-      );
-    } catch (e) {
-      developer.log(
-        'GET /auth/me failed, returning user without plan: $e',
-        name: 'AuthRepository',
-      );
-      // Return basic user; plan defaults to 'free'.
-      return AppUser(
-        uid: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName,
-      );
-    }
+    return _registerAndFetchUser(firebaseUser);
   }
 
   /// Stream of raw Firebase [User] auth-state changes.
@@ -158,47 +124,55 @@ class AuthRepository {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  Future<void> _persistToken(String? token) async {
-    if (token != null) {
-      await _storage.write(key: _tokenKey, value: token);
-    }
-  }
-
-  /// Calls POST /auth/register to upsert the user in the backend.
+  /// Core auth/sync flow shared by all sign-in paths and session restores.
   ///
-  /// On network failure the method still returns a valid [AppUser] so that
-  /// offline / first-boot scenarios do not block authentication.
-  Future<AppUser> _upsertUser(User firebaseUser, String? token) async {
+  /// Steps:
+  ///   1. Get (and persist) a fresh Firebase ID token.
+  ///   2. POST /auth/register — idempotent upsert; safe on every call.
+  ///   3. GET  /auth/me       — returns the user row with the current plan.
+  ///   4. On any network error: return a valid [AppUser] with plan:'free'
+  ///      so that offline / first-boot scenarios never block the user.
+  Future<AppUser> _registerAndFetchUser(User firebaseUser) async {
+    final token = await firebaseUser.getIdToken();
+    await _persistToken(token);
+
+    final authOptions = Options(
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
     try {
-      final response = await _dio.post(
-        '/auth/register',
-        options: token != null
-            ? Options(headers: {'Authorization': 'Bearer $token'})
-            : null,
-        data: {
-          'uid': firebaseUser.uid,
-          'email': firebaseUser.email,
-          'display_name': firebaseUser.displayName,
-        },
-      );
-      final data = response.data as Map<String, dynamic>;
-      final plan = data['plan'] as String? ?? 'free';
+      // Step 1: Upsert the user row in the backend DB.
+      // This is idempotent — safe to call on every sign-in.
+      await _dio.post('/auth/register', options: authOptions);
+
+      // Step 2: Fetch the user's plan from the backend.
+      final meResponse = await _dio.get('/auth/me', options: authOptions);
+      final data = meResponse.data as Map<String, dynamic>;
+
       return AppUser(
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? '',
         displayName: firebaseUser.displayName,
-        plan: plan,
+        plan: data['plan'] as String? ?? 'free',
       );
     } catch (e) {
       developer.log(
-        'POST /auth/register failed, using free plan: $e',
+        'Auth API call failed, returning user with free plan: $e',
         name: 'AuthRepository',
       );
+      // Offline or server error — return a usable AppUser so the app
+      // continues to function. Plan will be re-fetched on next launch.
       return AppUser(
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? '',
         displayName: firebaseUser.displayName,
       );
+    }
+  }
+
+  Future<void> _persistToken(String? token) async {
+    if (token != null) {
+      await _storage.write(key: _tokenKey, value: token);
     }
   }
 }

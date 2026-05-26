@@ -3,9 +3,11 @@ import '../../core/utils/formatters.dart';
 
 /// Displays a variation percentage with a colored background chip.
 ///
-/// Example:
-///   PriceChip(variation: -0.35) → red chip "-0.35%"
-///   PriceChip(variation: 0.17)  → green chip "+0.17%"
+/// Accepts a nullable [variation]:
+///   - null          -> grey chip with "—"  (no price data)
+///   - negative      -> red chip  "-0.35%"
+///   - positive      -> green chip "+0.17%"
+///   - zero          -> white chip "0.00%"
 class PriceChip extends StatelessWidget {
   const PriceChip({
     super.key,
@@ -13,7 +15,7 @@ class PriceChip extends StatelessWidget {
     this.showSign = true,
   });
 
-  final double variation;
+  final double? variation;
 
   /// When false, the +/− sign is stripped from the displayed text.
   final bool showSign;

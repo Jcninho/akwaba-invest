@@ -9,6 +9,13 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    # @JsonKey on Freezed factory parameters is valid but the analyzer
+    # incorrectly flags it as invalid_annotation_target. This is a known
+    # Freezed 2.x false positive — see github.com/rrousselGit/freezed#432.
+    invalid_annotation_target: ignore
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
