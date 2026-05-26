@@ -9,7 +9,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Firebase is required for Auth and FCM push notifications.
-  // In development, the google-services.json may be absent → catch gracefully.
+  // In development the google-services.json may be absent → catch gracefully.
   try {
     await Firebase.initializeApp();
   } catch (e) {
@@ -19,15 +19,18 @@ Future<void> main() async {
   runApp(const ProviderScope(child: AkwabaApp()));
 }
 
-class AkwabaApp extends StatelessWidget {
+/// Root widget. Watches [routerProvider] so that the router (and its auth
+/// guard) rebuilds whenever the authentication state changes.
+class AkwabaApp extends ConsumerWidget {
   const AkwabaApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'Akwaba Invest',
       theme: AppTheme.light(),
-      routerConfig: appRouter,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
   }
