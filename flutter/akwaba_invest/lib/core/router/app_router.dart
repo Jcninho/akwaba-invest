@@ -1,88 +1,138 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/alerts/presentation/screens/alerts_screen.dart';
-import '../../features/auth/domain/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/market/presentation/screens/market_screen.dart';
 import '../../features/market/presentation/screens/stock_detail_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/simulator/presentation/screens/simulator_screen.dart';
-import '../../shared/widgets/akwaba_scaffold.dart';
 
-/// Riverpod provider for the application [GoRouter].
-///
-/// Watches [authProvider] so that the router is recreated — and the [redirect]
-/// callback re-evaluated — whenever the authentication state changes.
+/// Application router.
 ///
 /// Redirect logic:
-///   - Not logged-in + non-auth route  → /login
-///   - Logged-in    + auth route       → /market
-///   - Otherwise                       → no redirect (null)
-final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+///   /  → /login (placeholder; TODO: redirect to /market when authenticated)
+///
+/// Shell route wraps the 5-tab bottom navigation:
+///   Market | Portfolio | Alertes | Simulateur | Profil
+final appRouter = GoRouter(
+  initialLocation: '/login',
+  debugLogDiagnostics: false,
+  routes: [
+    // Root redirect
+    GoRoute(
+      path: '/',
+      redirect: (_, __) => '/login',
+      // TODO: redirect to '/market' when authStateProvider returns true
+    ),
 
-  return GoRouter(
-    initialLocation: '/market',
-    debugLogDiagnostics: false,
-    redirect: (context, state) {
-      // valueOrNull is null when state is AsyncLoading or AsyncError.
-      final isLoggedIn = authState.valueOrNull != null;
-      final isAuthRoute = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register';
+    // Auth
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
 
-      if (!isLoggedIn && !isAuthRoute) return '/login';
-      if (isLoggedIn && isAuthRoute) return '/market';
-      return null;
-    },
-    routes: [
-      // ── Auth routes (no bottom nav) ──────────────────────────────────────
-      GoRoute(
-        path: '/login',
-        builder: (_, __) => const LoginScreen(),
+    // Full-screen stock detail (outside bottom nav shell)
+    GoRoute(
+      path: '/stock/:symbol',
+      builder: (context, state) => StockDetailScreen(
+        symbol: state.pathParameters['symbol'] ?? '',
       ),
-      GoRoute(
-        path: '/register',
-        builder: (_, __) => const RegisterScreen(),
-      ),
+    ),
 
-      // ── Full-screen stock detail (outside bottom-nav shell) ──────────────
-      GoRoute(
-        path: '/stock/:symbol',
-        builder: (_, state) => StockDetailScreen(
-          // safe: path parameter is always present when this route matches
-          symbol: state.pathParameters['symbol']!,
+    // Shell with bottom navigation bar (5 tabs)
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          _ShellScaffold(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/market',
+              builder: (context, state) => const MarketScreen(),
+            ),
+          ],
         ),
-      ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/portfolio',
+              builder: (context, state) => const PortfolioScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/alerts',
+              builder: (context, state) => const AlertsScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/simulator',
+              builder: (context, state) => const SimulatorScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/profile',
+              builder: (context, state) => const ProfileScreen(),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ],
+);
 
-      // ── Shell with bottom navigation bar (5 tabs) ────────────────────────
-      ShellRoute(
-        builder: (context, state, child) => AkwabaScaffold(child: child),
-        routes: [
-          GoRoute(
-            path: '/market',
-            builder: (_, __) => const MarketScreen(),
+/// Bottom navigation scaffold shared by all shell branches.
+class _ShellScaffold extends StatelessWidget {
+  const _ShellScaffold({required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: (index) => navigationShell.goBranch(
+          index,
+          initialLocation: index == navigationShell.currentIndex,
+        ),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.show_chart),
+            label: 'Marché',
           ),
-          GoRoute(
-            path: '/portfolio',
-            builder: (_, __) => const PortfolioScreen(),
+          NavigationDestination(
+            icon: Icon(Icons.pie_chart_outline),
+            selectedIcon: Icon(Icons.pie_chart),
+            label: 'Portefeuille',
           ),
-          GoRoute(
-            path: '/alerts',
-            builder: (_, __) => const AlertsScreen(),
+          NavigationDestination(
+            icon: Icon(Icons.notifications_outlined),
+            selectedIcon: Icon(Icons.notifications),
+            label: 'Alertes',
           ),
-          GoRoute(
-            path: '/simulator',
-            builder: (_, __) => const SimulatorScreen(),
+          NavigationDestination(
+            icon: Icon(Icons.calculate),
+            label: 'Simulateur',
           ),
-          GoRoute(
-            path: '/profile',
-            builder: (_, __) => const ProfileScreen(),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
           ),
         ],
       ),
-    ],
-  );
-});
+    );
+  }
+}

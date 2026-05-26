@@ -23,9 +23,7 @@ dependencies:
   json_annotation: ^4.9.0
   flutter_secure_storage: ^9.0.0
   firebase_core: ^2.27.0
-  firebase_auth: ^4.20.0
   firebase_messaging: ^14.7.0
-  google_sign_in: ^6.2.1
   connectivity_plus: ^6.0.1
 
 dev_dependencies:
