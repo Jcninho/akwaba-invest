@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
@@ -9,6 +8,7 @@ import '../../../shared/widgets/loading_shimmer.dart';
 import '../../../shared/widgets/price_chip.dart';
 import '../../market/domain/models/stock_model.dart';
 import '../domain/stock_detail_provider.dart';
+import '../../alerts/presentation/widgets/create_alert_sheet.dart';
 import '../../portfolio/presentation/widgets/add_position_sheet.dart';
 import 'widgets/info_row.dart';
 import 'widgets/period_selector.dart';
@@ -189,7 +189,17 @@ class StockDetailScreen extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () => context.go('/alerts'),
+                    onPressed: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: AppColors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (_) =>
+                          CreateAlertSheet(prefilledSymbol: symbol),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.darkBlue,
                       side: const BorderSide(color: AppColors.darkBlue),
