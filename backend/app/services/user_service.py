@@ -14,19 +14,45 @@ def upsert_user(
     firebase_uid: str,
     email: str,
 ) -> User:
-    """Create user if not exists, otherwise return existing."""
+    """
+    Create or update user from Firebase identity.
+
+    Handles three cases:
+    1. Existing user matched by firebase_uid → return as-is
+    2. Existing user matched by email (Firebase account recreated with
+       a new UID) → update firebase_uid to the new value
+    3. No match → create new user
+    """
+    # Case 1: match by firebase_uid
     existing = session.exec(
         select(User).where(User.firebase_uid == firebase_uid)
     ).first()
     if existing:
-        logger.info(f"User already exists: {email}")
+        logger.info("User found by firebase_uid: %s", email)
         return existing
 
+    # Case 2: match by email (account recreated with new UID)
+    if email:
+        by_email = session.exec(
+            select(User).where(User.email == email)
+        ).first()
+        if by_email:
+            logger.info(
+                "User found by email, updating firebase_uid: %s", email
+            )
+            by_email.firebase_uid = firebase_uid
+            by_email.updated_at = datetime.utcnow()
+            session.add(by_email)
+            session.commit()
+            session.refresh(by_email)
+            return by_email
+
+    # Case 3: new user
     user = User(firebase_uid=firebase_uid, email=email, plan="free")
     session.add(user)
     session.commit()
     session.refresh(user)
-    logger.info(f"User created: {email}")
+    logger.info("User created: %s", email)
     return user
 
 

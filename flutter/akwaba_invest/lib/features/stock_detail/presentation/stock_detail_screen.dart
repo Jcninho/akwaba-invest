@@ -9,6 +9,7 @@ import '../../../shared/widgets/loading_shimmer.dart';
 import '../../../shared/widgets/price_chip.dart';
 import '../../market/domain/models/stock_model.dart';
 import '../domain/stock_detail_provider.dart';
+import '../../portfolio/presentation/widgets/add_position_sheet.dart';
 import 'widgets/info_row.dart';
 import 'widgets/period_selector.dart';
 import 'widgets/price_chart.dart';
@@ -159,7 +160,17 @@ class StockDetailScreen extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => context.go('/portfolio'),
+                    onPressed: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: AppColors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (_) =>
+                          AddPositionSheet(prefilledSymbol: symbol),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.green,
                       foregroundColor: AppColors.white,
