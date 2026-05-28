@@ -6,7 +6,7 @@ import '../../features/auth/domain/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/market/presentation/screens/market_screen.dart';
-import '../../features/market/presentation/screens/stock_detail_screen.dart';
+import '../../features/stock_detail/presentation/stock_detail_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/simulator/presentation/screens/simulator_screen.dart';
