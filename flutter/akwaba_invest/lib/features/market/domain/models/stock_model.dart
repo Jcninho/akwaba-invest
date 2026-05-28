@@ -174,7 +174,7 @@ class StockDetailModel with _$StockDetailModel {
     required String name,
     required String sector,
     required String country,
-    @JsonKey(name: 'latest_price') StockWithPriceModel? latestPrice,
+    @JsonKey(name: 'latest_price') DailyPriceModel? latestPrice,
     @JsonKey(name: 'latest_dividend') DividendModel? latestDividend,
     @Default([]) List<FinancialModel> financials,
   }) = _StockDetailModel;
