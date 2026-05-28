@@ -8,7 +8,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/market/presentation/screens/market_screen.dart';
 import '../../features/stock_detail/presentation/stock_detail_screen.dart';
 import '../../features/portfolio/presentation/screens/portfolio_screen.dart';
-import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/simulator/presentation/simulator_screen.dart';
 import '../../shared/widgets/akwaba_scaffold.dart';
 
